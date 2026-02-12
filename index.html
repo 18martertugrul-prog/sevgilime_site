@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Sana Özel 💖</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    text-align:center;
+    color:white;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    transition:background 0.5s;
+    filter: brightness(1.15);
+}
+
+.overlay{
+    background:rgba(0,0,0,0.35);
+    min-height:100vh;
+    padding-bottom:100px;
+}
+
+header{
+    display:block;
+    margin:12px auto;
+    position:sticky;
+    top:0;
+    background:rgba(0,0,0,0.7);
+    padding:15px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+h2{ margin-top:20px }
+
+button{
+    padding:12px 20px;
+    margin:8px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.btn{ background:#ff5fa2; color:white }
+.btn2{ background:#6ee7ff; color:black }
+
+#emoji span{
+    position:fixed;
+    font-size:30px;
+    animation:fly 2s linear forwards;
+}
+
+@keyframes fly{
+    from{bottom:0; opacity:1}
+    to{bottom:100%; opacity:0}
+}
+
+</style>
+</head>
+
+<body>
+<div class="overlay">
+
+<header>
+SEVGİLİLER GÜNÜMÜZ KUTLU OLSUN AŞKIM  
+NİCE SENELERE HEP BİRLİKTE OLALIM 💖
+</header>
+
+<h2>Senin için 💕</h2>
+
+<button class="btn" onclick="romantic()">Mesaj 💌</button>
+<p id="romantik"></p>
+
+<button class="btn" onclick="changeBg()">Fotoğraf 📸</button>
+
+<button class="btn" onclick="gunSayisi()">Gün Sayısı ❤️</button>
+<p id="days" style="display:none;"></p>
+
+
+<button class="btn" onclick="secret()">Gizli Mesaj 🔒</button>
+<div id="secret"></div>
+
+<a href="game.html">
+    <button class="btn">OYUNA GİR 🎮</button>
+</a>
+
+<br>
+<button class="btn2" onclick="fullscreen()">Tam Ekran ⛶</button>
+
+<audio id="music" src="muzik.mp3" loop></audio>
+
+<script>
+/* ARKA PLAN */
+let bgIndex=1;
+function changeBg(){
+    bgIndex++;
+    if(bgIndex>10) bgIndex=1;
+    document.body.style.backgroundImage=`url('foto${bgIndex}.jpg')`;
+}
+changeBg();
+
+/* ROMANTİK MESAJLAR */
+let messages=[
+"Sen benim bekleyişlerimin mucizesisin 💖",
+"Gülüşün bana hayat oluyor ✨",
+"Kalbim hep sen diye atıyor 💓",
+"Seninle her gün sevgililer günü",
+"Yan yana olduğmuz sürece her şey mümkün",
+"İyi ki varsın aşkım",
+"Hayat seninle çok daha güzel",
+"Kalbimin tek sahibi sensin",
+"Seni sevmek benim en güzel alışkanlığım",
+"Benim hikayemde hep sen olacaksın"
+];
+let mi=0;
+function romantic(){
+    document.getElementById("romantik").innerText=messages[mi];
+    mi=(mi+1)%messages.length;
+}
+
+
+
+/* GİZLİ */
+function secret(){
+    let pass=prompt("Şifre unuttuğun neyse o");
+    if(pass!=="02.07.2006"){
+        document.getElementById("secret").innerText="unutma artıkkkk 😜";
+    }else{
+        document.getElementById("secret").innerHTML=`
+        <p>Benimle bu hayatı yaşamaya var mısın?</p>
+        <button class="btn" onclick="yes()">EVET</button>
+        <button class="btn" onclick="yes()">EVET</button>`;
+    }
+}
+
+function yes(){
+    for(let i=0;i<60;i++){
+        let e=document.createElement("span");
+        e.innerText="💖";
+        e.style.left=Math.random()*100+"%";
+        e.style.animationDuration=(2+Math.random()*3)+"s";
+        document.getElementById("emoji").appendChild(e);
+        setTimeout(()=>e.remove(),5000);
+    }
+    setTimeout(()=>{ 
+        alert("Sen benim her şeyimsin 💕");
+    },800);
+}
+
+/* FULLSCREEN */
+function fullscreen(){
+    document.documentElement.requestFullscreen();
+}
+
+/* GÜN SAYISI */
+let start = new Date("2025-11-06");
+
+function gunSayisi(){
+    let d = document.getElementById("days");
+
+    if(d.style.display === "none"){
+        let now = new Date();
+        let gun = Math.floor((now - start) / (1000*60*60*24));
+        d.innerText = gun + " gündür birlikteyiz ❤️";
+        d.style.display = "block";
+    }else{
+        d.style.display = "none";
+    }
+}
+
+document.addEventListener("click", function(){
+    let music = document.getElementById("music");
+    if(music.paused){
+        music.play();
+    }
+}, { once:true });
+
+</script>
+
+<div id="emoji"></div>
+</body>
+</html>
