@@ -69,15 +69,16 @@ function resizeGame(){
 resizeGame();
 window.addEventListener("resize", resizeGame);
 
-/* ===== ZAMANA BAĞLI FİZİK ===== */
+/* ===== FİZİK ===== */
 const GRAVITY = 0.3025;
 const JUMP = -6.2;
-const MAX_FALL = 6;
+const MAX_FALL = 7;
 
-const PIPE_SPEED = 2.057;   // %10 daha arttırıldı
+let basePipeSpeed = 2.057;   // başlangıç hız
+let currentPipeSpeed = basePipeSpeed;
+
 const PIPE_GAP = 195;
 const PIPE_DISTANCE = 150;
-
 const GROUND_HEIGHT = 80;
 
 let lastTime = 0;
@@ -87,7 +88,8 @@ let bird = {
     x: 90,
     y: 350,
     radius: 18,
-    velocity: 0
+    velocity: 0,
+    rotation: 0
 };
 
 /* ===== OYUN ===== */
@@ -110,6 +112,7 @@ document.getElementById("fullscreenBtn").onclick = () => {
 function jump(){
     if(!gameOver){
         bird.velocity = JUMP;
+        bird.rotation = -20; // yukarı eğil
     } else {
         restart();
     }
@@ -132,32 +135,39 @@ function createPipe(){
     });
 }
 
-/* ===== ÇİZİM ===== */
+/* ===== KUŞ ÇİZ ===== */
 function drawBird(){
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    ctx.rotate(bird.rotation * Math.PI/180);
+
     ctx.fillStyle="#ffcc00";
     ctx.beginPath();
-    ctx.arc(bird.x,bird.y,bird.radius,0,Math.PI*2);
+    ctx.arc(0,0,bird.radius,0,Math.PI*2);
     ctx.fill();
 
     ctx.fillStyle="white";
     ctx.beginPath();
-    ctx.arc(bird.x+6,bird.y-5,5,0,Math.PI*2);
+    ctx.arc(6,-5,5,0,Math.PI*2);
     ctx.fill();
 
     ctx.fillStyle="black";
     ctx.beginPath();
-    ctx.arc(bird.x+7,bird.y-5,2,0,Math.PI*2);
+    ctx.arc(7,-5,2,0,Math.PI*2);
     ctx.fill();
 
     ctx.fillStyle="orange";
     ctx.beginPath();
-    ctx.moveTo(bird.x+bird.radius, bird.y);
-    ctx.lineTo(bird.x+bird.radius+10, bird.y-4);
-    ctx.lineTo(bird.x+bird.radius+10, bird.y+4);
+    ctx.moveTo(bird.radius, 0);
+    ctx.lineTo(bird.radius+10, -4);
+    ctx.lineTo(bird.radius+10, 4);
     ctx.closePath();
     ctx.fill();
+
+    ctx.restore();
 }
 
+/* ===== BORULAR ===== */
 function drawPipes(){
     pipes.forEach(pipe=>{
         ctx.fillStyle="#2ecc71";
@@ -173,11 +183,13 @@ function drawPipes(){
     });
 }
 
+/* ===== ZEMİN ===== */
 function drawGround(){
     ctx.fillStyle="#8b5a2b";
     ctx.fillRect(0,canvas.height-GROUND_HEIGHT,canvas.width,GROUND_HEIGHT);
 }
 
+/* ===== ÇARPIŞMA ===== */
 function checkCollision(pipe){
     if(
         bird.x + bird.radius > pipe.x &&
@@ -193,15 +205,19 @@ function checkCollision(pipe){
     return false;
 }
 
+/* ===== RESET ===== */
 function restart(){
     bird.y = 350;
     bird.velocity = 0;
+    bird.rotation = 0;
     pipes = [];
     score = 0;
     frame = 0;
+    currentPipeSpeed = basePipeSpeed;
     gameOver = false;
 }
 
+/* ===== GAME LOOP ===== */
 function update(timestamp){
 
     let deltaTime = (timestamp - lastTime) / 16.67;
@@ -215,17 +231,28 @@ function update(timestamp){
     }
 
     if(!gameOver){
+
         bird.velocity += GRAVITY * deltaTime;
         if(bird.velocity > MAX_FALL) bird.velocity = MAX_FALL;
         bird.y += bird.velocity * deltaTime;
+
+        // düşerken aşağı eğil
+        if(bird.velocity > 0){
+            bird.rotation += 3 * deltaTime;
+            if(bird.rotation > 90) bird.rotation = 90;
+        }
+
     }
 
     pipes.forEach(pipe=>{
-        pipe.x -= PIPE_SPEED * deltaTime;
+        pipe.x -= currentPipeSpeed * deltaTime;
 
         if(!pipe.passed && pipe.x + 60 < bird.x){
             score++;
             pipe.passed = true;
+
+            // skor arttıkça hız artsın
+            currentPipeSpeed += 0.08;
         }
 
         if(checkCollision(pipe)){
