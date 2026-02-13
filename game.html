@@ -74,11 +74,13 @@ const GRAVITY = 0.3025;
 const JUMP = -6.2;
 const MAX_FALL = 7;
 
-let basePipeSpeed = 2.057;   // başlangıç hız
+let basePipeSpeed = 2.057;
 let currentPipeSpeed = basePipeSpeed;
 
 const PIPE_GAP = 195;
-const PIPE_DISTANCE = 150;
+const PIPE_WIDTH = 60;
+const PIPE_DISTANCE_PX = 260;   // 🔥 SABİT YATAY MESAFE (piksel)
+
 const GROUND_HEIGHT = 80;
 
 let lastTime = 0;
@@ -94,7 +96,6 @@ let bird = {
 
 /* ===== OYUN ===== */
 let pipes = [];
-let frame = 0;
 let score = 0;
 let bestScore = localStorage.getItem("bestScore") || 0;
 let gameOver = false;
@@ -112,7 +113,7 @@ document.getElementById("fullscreenBtn").onclick = () => {
 function jump(){
     if(!gameOver){
         bird.velocity = JUMP;
-        bird.rotation = -20; // yukarı eğil
+        bird.rotation = -20;
     } else {
         restart();
     }
@@ -123,11 +124,12 @@ document.addEventListener("keydown", e=>{
 });
 canvas.addEventListener("touchstart", jump);
 
-/* ===== BORU ===== */
+/* ===== BORU OLUŞTURMA (PİKSEL TABANLI) ===== */
 function createPipe(){
     let min = 80;
     let max = canvas.height - PIPE_GAP - GROUND_HEIGHT - 80;
     let topHeight = Math.random()*(max-min)+min;
+
     pipes.push({
         x: canvas.width,
         top: topHeight,
@@ -135,7 +137,7 @@ function createPipe(){
     });
 }
 
-/* ===== KUŞ ÇİZ ===== */
+/* ===== KUŞ ===== */
 function drawBird(){
     ctx.save();
     ctx.translate(bird.x, bird.y);
@@ -172,14 +174,14 @@ function drawPipes(){
     pipes.forEach(pipe=>{
         ctx.fillStyle="#2ecc71";
 
-        ctx.fillRect(pipe.x,0,60,pipe.top);
-        ctx.fillRect(pipe.x-5,pipe.top-20,70,20);
+        ctx.fillRect(pipe.x,0,PIPE_WIDTH,pipe.top);
+        ctx.fillRect(pipe.x-5,pipe.top-20,PIPE_WIDTH+10,20);
 
         let bottomY = pipe.top + PIPE_GAP;
         let bottomHeight = canvas.height - bottomY - GROUND_HEIGHT;
 
-        ctx.fillRect(pipe.x,bottomY,60,bottomHeight);
-        ctx.fillRect(pipe.x-5,bottomY,70,20);
+        ctx.fillRect(pipe.x,bottomY,PIPE_WIDTH,bottomHeight);
+        ctx.fillRect(pipe.x-5,bottomY,PIPE_WIDTH+10,20);
     });
 }
 
@@ -193,7 +195,7 @@ function drawGround(){
 function checkCollision(pipe){
     if(
         bird.x + bird.radius > pipe.x &&
-        bird.x - bird.radius < pipe.x + 60
+        bird.x - bird.radius < pipe.x + PIPE_WIDTH
     ){
         if(
             bird.y - bird.radius < pipe.top ||
@@ -212,7 +214,6 @@ function restart(){
     bird.rotation = 0;
     pipes = [];
     score = 0;
-    frame = 0;
     currentPipeSpeed = basePipeSpeed;
     gameOver = false;
 }
@@ -224,10 +225,15 @@ function update(timestamp){
     lastTime = timestamp;
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    frame++;
 
-    if(frame % PIPE_DISTANCE === 0){
+    /* === SABİT MESAFE MANTIĞI === */
+    if(pipes.length === 0){
         createPipe();
+    } else {
+        let lastPipe = pipes[pipes.length-1];
+        if(canvas.width - lastPipe.x >= PIPE_DISTANCE_PX){
+            createPipe();
+        }
     }
 
     if(!gameOver){
@@ -236,23 +242,20 @@ function update(timestamp){
         if(bird.velocity > MAX_FALL) bird.velocity = MAX_FALL;
         bird.y += bird.velocity * deltaTime;
 
-        // düşerken aşağı eğil
         if(bird.velocity > 0){
             bird.rotation += 3 * deltaTime;
             if(bird.rotation > 90) bird.rotation = 90;
         }
-
     }
 
     pipes.forEach(pipe=>{
         pipe.x -= currentPipeSpeed * deltaTime;
 
-        if(!pipe.passed && pipe.x + 60 < bird.x){
+        if(!pipe.passed && pipe.x + PIPE_WIDTH < bird.x){
             score++;
             pipe.passed = true;
 
-            // skor arttıkça hız artsın
-            currentPipeSpeed += 0.08;
+            currentPipeSpeed += 0.08; // hız artsın ama mesafe sabit kalsın
         }
 
         if(checkCollision(pipe)){
