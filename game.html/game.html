@@ -48,6 +48,10 @@ canvas{
     <canvas id="game"></canvas>
 </div>
 
+<!-- SESLER -->
+<audio id="bgMusic" src="bgmusic.mp3" loop></audio>
+<audio id="pointSound" src="point.mp3"></audio>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -69,14 +73,14 @@ function resizeGame(){
 resizeGame();
 window.addEventListener("resize", resizeGame);
 
-/* ===== GÜNCELLENMİŞ FİZİK ===== */
-const GRAVITY = 0.275;          // %25 arttı
+/* ===== GÜNCEL FİZİK ===== */
+const GRAVITY = 0.302;     // %10 daha arttı
 const JUMP = -6.2;
-const MAX_FALL = 6;
+const MAX_FALL = 7;
 
-const PIPE_SPEED = 1.87;       // %10 arttı
-const PIPE_GAP = 195;          // %25 azaltıldı
-const PIPE_DISTANCE = 150;     // yatay frame
+const PIPE_SPEED = 2.06;  // %10 daha arttı
+const PIPE_GAP = 195;
+const PIPE_DISTANCE = 150;
 
 const GROUND_HEIGHT = 80;
 
@@ -94,6 +98,11 @@ let frame = 0;
 let score = 0;
 let bestScore = localStorage.getItem("bestScore") || 0;
 let gameOver = false;
+let musicStarted = false;
+
+/* ===== SES ===== */
+const bgMusic = document.getElementById("bgMusic");
+const pointSound = document.getElementById("pointSound");
 
 /* ===== TAM EKRAN ===== */
 document.getElementById("fullscreenBtn").onclick = () => {
@@ -106,6 +115,12 @@ document.getElementById("fullscreenBtn").onclick = () => {
 
 /* ===== KONTROL ===== */
 function jump(){
+    if(!musicStarted){
+        bgMusic.volume = 0.5;
+        bgMusic.play();
+        musicStarted = true;
+    }
+
     if(!gameOver){
         bird.velocity = JUMP;
     } else {
@@ -130,7 +145,7 @@ function createPipe(){
     });
 }
 
-/* ===== KUŞ ÇİZ ===== */
+/* ===== KUŞ ===== */
 function drawBird(){
     ctx.fillStyle="#ffcc00";
     ctx.beginPath();
@@ -225,6 +240,9 @@ function update(){
         if(!pipe.passed && pipe.x + 60 < bird.x){
             score++;
             pipe.passed = true;
+
+            pointSound.currentTime = 0;
+            pointSound.play();
         }
 
         if(checkCollision(pipe)){
@@ -244,23 +262,6 @@ function update(){
     ctx.font="28px Arial";
     ctx.fillText("Skor: "+score,20,40);
     ctx.fillText("Rekor: "+bestScore,20,80);
-
-    if(gameOver){
-        if(score > bestScore){
-            bestScore = score;
-            localStorage.setItem("bestScore",bestScore);
-        }
-
-        ctx.fillStyle="rgba(0,0,0,0.4)";
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-
-        ctx.fillStyle="white";
-        ctx.font="36px Arial";
-        ctx.fillText("Oyun Bitti 💔",80,300);
-
-        ctx.font="22px Arial";
-        ctx.fillText("Tekrar başlamak için dokun",60,350);
-    }
 
     requestAnimationFrame(update);
 }
