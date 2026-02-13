@@ -69,16 +69,18 @@ function resizeGame(){
 resizeGame();
 window.addEventListener("resize", resizeGame);
 
-/* ===== GÜNCELLENMİŞ FİZİK ===== */
-const GRAVITY = 0.275;          // %25 arttı
+/* ===== ZAMANA BAĞLI FİZİK ===== */
+const GRAVITY = 0.3025;
 const JUMP = -6.2;
 const MAX_FALL = 6;
 
-const PIPE_SPEED = 1.87;       // %10 arttı
-const PIPE_GAP = 195;          // %25 azaltıldı
-const PIPE_DISTANCE = 150;     // yatay frame
+const PIPE_SPEED = 1.87;
+const PIPE_GAP = 195;
+const PIPE_DISTANCE = 150;
 
 const GROUND_HEIGHT = 80;
+
+let lastTime = 0;
 
 /* ===== KUŞ ===== */
 let bird = {
@@ -118,7 +120,7 @@ document.addEventListener("keydown", e=>{
 });
 canvas.addEventListener("touchstart", jump);
 
-/* ===== BORU OLUŞTUR ===== */
+/* ===== BORU ===== */
 function createPipe(){
     let min = 80;
     let max = canvas.height - PIPE_GAP - GROUND_HEIGHT - 80;
@@ -130,7 +132,7 @@ function createPipe(){
     });
 }
 
-/* ===== KUŞ ÇİZ ===== */
+/* ===== ÇİZİM ===== */
 function drawBird(){
     ctx.fillStyle="#ffcc00";
     ctx.beginPath();
@@ -156,7 +158,6 @@ function drawBird(){
     ctx.fill();
 }
 
-/* ===== BORULAR ===== */
 function drawPipes(){
     pipes.forEach(pipe=>{
         ctx.fillStyle="#2ecc71";
@@ -172,13 +173,11 @@ function drawPipes(){
     });
 }
 
-/* ===== ZEMİN ===== */
 function drawGround(){
     ctx.fillStyle="#8b5a2b";
     ctx.fillRect(0,canvas.height-GROUND_HEIGHT,canvas.width,GROUND_HEIGHT);
 }
 
-/* ===== ÇARPIŞMA ===== */
 function checkCollision(pipe){
     if(
         bird.x + bird.radius > pipe.x &&
@@ -194,7 +193,6 @@ function checkCollision(pipe){
     return false;
 }
 
-/* ===== RESET ===== */
 function restart(){
     bird.y = 350;
     bird.velocity = 0;
@@ -204,8 +202,11 @@ function restart(){
     gameOver = false;
 }
 
-/* ===== GAME LOOP ===== */
-function update(){
+function update(timestamp){
+
+    let deltaTime = (timestamp - lastTime) / 16.67;
+    lastTime = timestamp;
+
     ctx.clearRect(0,0,canvas.width,canvas.height);
     frame++;
 
@@ -214,13 +215,13 @@ function update(){
     }
 
     if(!gameOver){
-        bird.velocity += GRAVITY;
+        bird.velocity += GRAVITY * deltaTime;
         if(bird.velocity > MAX_FALL) bird.velocity = MAX_FALL;
-        bird.y += bird.velocity;
+        bird.y += bird.velocity * deltaTime;
     }
 
     pipes.forEach(pipe=>{
-        pipe.x -= PIPE_SPEED;
+        pipe.x -= PIPE_SPEED * deltaTime;
 
         if(!pipe.passed && pipe.x + 60 < bird.x){
             score++;
@@ -265,7 +266,7 @@ function update(){
     requestAnimationFrame(update);
 }
 
-update();
+requestAnimationFrame(update);
 </script>
 
 </body>
