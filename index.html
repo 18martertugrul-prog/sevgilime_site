@@ -60,7 +60,6 @@ button{
     to{bottom:100%; opacity:0}
 }
 
-/* Spotify alanı */
 #spotifyBox{
     margin-top:20px;
     display:none;
@@ -94,17 +93,9 @@ NİCE SENELERE HEP BİRLİKTE OLALIM 💖
     <button class="btn">OYUNA GİR 🎮</button>
 </a>
 
-<!-- YENİ SPOTIFY BUTONU -->
-<button class="btn" onclick="toggleSpotify()">Şarkı Listemiz 🎵</button>
+<button class="btn" onclick="openSpotify()">Şarkı Listemiz 🎵</button>
 
-<div id="spotifyBox">
-<iframe style="border-radius:12px" 
-src="https://open.spotify.com/playlist/3ajvMVMkkLoLnx4tQnPrkf?si=5b5cc573fe4848ce" 
-width="300" height="380" frameBorder="0" 
-allowfullscreen="" 
-allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-</iframe>
-</div>
+<div id="spotifyBox"></div>
 
 <br>
 <button class="btn2" onclick="fullscreen()">Tam Ekran ⛶</button>
@@ -140,13 +131,34 @@ function romantic(){
     mi=(mi+1)%messages.length;
 }
 
-/* SPOTIFY GÖSTER/GİZLE */
-function toggleSpotify(){
-    let box=document.getElementById("spotifyBox");
-    if(box.style.display==="none"){
-        box.style.display="block";
+/* SPOTIFY AKILLI AÇMA */
+function openSpotify(){
+
+    const playlistID = "PLAYLIST_ID_BURAYA";
+    const appUrl = "spotify:playlist:" + playlistID;
+    const webUrl = "https://open.spotify.com/playlist/" + playlistID;
+
+    let tercih = confirm("Spotify uygulamasında açılsın mı?");
+
+    if(tercih){
+        // Uygulamayı açmayı dene
+        window.location.href = appUrl;
+
+        // 1 saniye sonra hala sayfadaysa web'e yönlendir
+        setTimeout(function(){
+            window.location.href = webUrl;
+        },1000);
+
     }else{
-        box.style.display="none";
+        // Sayfa içinde embed aç
+        let box = document.getElementById("spotifyBox");
+        box.innerHTML = `
+        <iframe style="border-radius:12px" 
+        src="https://open.spotify.com/playlist/3ajvMVMkkLoLnx4tQnPrkf?si=9aea960b8e0645c6" 
+        width="300" height="380" frameBorder="0" 
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+        </iframe>`;
+        box.style.display="block";
     }
 }
 
