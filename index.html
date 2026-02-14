@@ -60,6 +60,12 @@ button{
     to{bottom:100%; opacity:0}
 }
 
+/* Spotify alanı */
+#spotifyBox{
+    margin-top:20px;
+    display:none;
+}
+
 </style>
 </head>
 
@@ -81,13 +87,24 @@ NİCE SENELERE HEP BİRLİKTE OLALIM 💖
 <button class="btn" onclick="gunSayisi()">Gün Sayısı ❤️</button>
 <p id="days" style="display:none;"></p>
 
-
 <button class="btn" onclick="secret()">Gizli Mesaj 🔒</button>
 <div id="secret"></div>
 
 <a href="game.html">
     <button class="btn">OYUNA GİR 🎮</button>
 </a>
+
+<!-- YENİ SPOTIFY BUTONU -->
+<button class="btn" onclick="toggleSpotify()">Şarkı Listemiz 🎵</button>
+
+<div id="spotifyBox">
+<iframe style="border-radius:12px" 
+src="https://open.spotify.com/playlist/3ajvMVMkkLoLnx4tQnPrkf?si=5b5cc573fe4848ce" 
+width="300" height="380" frameBorder="0" 
+allowfullscreen="" 
+allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+</iframe>
+</div>
 
 <br>
 <button class="btn2" onclick="fullscreen()">Tam Ekran ⛶</button>
@@ -123,7 +140,15 @@ function romantic(){
     mi=(mi+1)%messages.length;
 }
 
-
+/* SPOTIFY GÖSTER/GİZLE */
+function toggleSpotify(){
+    let box=document.getElementById("spotifyBox");
+    if(box.style.display==="none"){
+        box.style.display="block";
+    }else{
+        box.style.display="none";
+    }
+}
 
 /* GİZLİ */
 function secret(){
