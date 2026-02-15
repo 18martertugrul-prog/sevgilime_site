@@ -8,265 +8,269 @@
 <style>
 body{
     margin:0;
-    background:#f8e6f0;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
     overflow:hidden;
-    font-family:Arial, sans-serif;
-}
-
-#gameContainer{
-    position:relative;
+    background:#87CEEB;
 }
 
 canvas{
-    background:linear-gradient(to top,#f9d6e5,#fff0f6);
     display:block;
-    border-radius:12px;
-}
-
-#fullscreenBtn{
-    position:absolute;
-    top:10px;
-    right:10px;
-    padding:6px 12px;
-    background:#ff69b4;
-    color:white;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:14px;
+    margin:auto;
+    background:linear-gradient(#87CEEB,#ffe6f2);
 }
 </style>
 </head>
 <body>
 
-<div id="gameContainer">
-    <button id="fullscreenBtn">Tam Ekran</button>
-    <canvas id="game"></canvas>
-</div>
+<canvas id="game"></canvas>
+<audio id="bgMusic" src="bgmusic.mp3" loop></audio>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-/* ===== SABİT ORAN ===== */
-const BASE_WIDTH = 400;
-const BASE_HEIGHT = 700;
+canvas.width = 400;
+canvas.height = 700;
 
-function resizeGame(){
-    let scale = Math.min(
-        window.innerWidth / BASE_WIDTH,
-        window.innerHeight / BASE_HEIGHT
-    );
-    canvas.width = BASE_WIDTH;
-    canvas.height = BASE_HEIGHT;
-    canvas.style.width = BASE_WIDTH * scale + "px";
-    canvas.style.height = BASE_HEIGHT * scale + "px";
-}
-resizeGame();
-window.addEventListener("resize", resizeGame);
+/* ===================== */
+/* SABİT MEKANİKLER */
+/* ===================== */
 
-/* ===== GÜNCELLENMİŞ FİZİK ===== */
-const GRAVITY = 0.275;          // %25 arttı
+const GRAVITY = 0.3025;
 const JUMP = -6.2;
-const MAX_FALL = 6;
+const MAX_FALL = 7;
 
-const PIPE_SPEED = 1.87;       // %10 arttı
-const PIPE_GAP = 195;          // %25 azaltıldı
-const PIPE_DISTANCE = 150;     // yatay frame
+let basePipeSpeed = 2.057;
+let currentPipeSpeed = basePipeSpeed;
 
+const PIPE_GAP = 195;
+const PIPE_WIDTH = 60;
+const PIPE_DISTANCE_PX = 260;
 const GROUND_HEIGHT = 80;
 
-/* ===== KUŞ ===== */
+/* ===================== */
+/* PARALLAX */
+/* ===================== */
+
+let cloudX1 = 0;
+let cloudX2 = 200;
+
+/* ===================== */
+/* KUŞ */
+/* ===================== */
+
 let bird = {
     x: 90,
     y: 350,
     radius: 18,
-    velocity: 0
+    velocity: 0,
+    rotation: 0,
+    wingUp:true
 };
 
-/* ===== OYUN ===== */
 let pipes = [];
-let frame = 0;
+let hearts = [];
 let score = 0;
-let bestScore = localStorage.getItem("bestScore") || 0;
 let gameOver = false;
+let lastTime = 0;
 
-/* ===== TAM EKRAN ===== */
-document.getElementById("fullscreenBtn").onclick = () => {
-    if(!document.fullscreenElement){
-        document.documentElement.requestFullscreen();
-    } else {
-        document.exitFullscreen();
-    }
-};
+/* ===================== */
+/* MÜZİK */
+/* ===================== */
 
-/* ===== KONTROL ===== */
+document.addEventListener("click",()=>{
+    document.getElementById("bgMusic").play();
+},{once:true});
+
+/* ===================== */
+/* KONTROL */
+/* ===================== */
+
 function jump(){
     if(!gameOver){
         bird.velocity = JUMP;
-    } else {
+        bird.rotation = -20;
+    }else{
         restart();
     }
 }
 
-document.addEventListener("keydown", e=>{
+document.addEventListener("keydown",e=>{
     if(e.code==="Space") jump();
 });
-canvas.addEventListener("touchstart", jump);
+canvas.addEventListener("touchstart",jump);
 
-/* ===== BORU OLUŞTUR ===== */
+/* ===================== */
+/* BORU */
+/* ===================== */
+
 function createPipe(){
     let min = 80;
     let max = canvas.height - PIPE_GAP - GROUND_HEIGHT - 80;
     let topHeight = Math.random()*(max-min)+min;
+
     pipes.push({
         x: canvas.width,
         top: topHeight,
         passed:false
     });
-}
 
-/* ===== KUŞ ÇİZ ===== */
-function drawBird(){
-    ctx.fillStyle="#ffcc00";
-    ctx.beginPath();
-    ctx.arc(bird.x,bird.y,bird.radius,0,Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle="white";
-    ctx.beginPath();
-    ctx.arc(bird.x+6,bird.y-5,5,0,Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle="black";
-    ctx.beginPath();
-    ctx.arc(bird.x+7,bird.y-5,2,0,Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle="orange";
-    ctx.beginPath();
-    ctx.moveTo(bird.x+bird.radius, bird.y);
-    ctx.lineTo(bird.x+bird.radius+10, bird.y-4);
-    ctx.lineTo(bird.x+bird.radius+10, bird.y+4);
-    ctx.closePath();
-    ctx.fill();
-}
-
-/* ===== BORULAR ===== */
-function drawPipes(){
-    pipes.forEach(pipe=>{
-        ctx.fillStyle="#2ecc71";
-
-        ctx.fillRect(pipe.x,0,60,pipe.top);
-        ctx.fillRect(pipe.x-5,pipe.top-20,70,20);
-
-        let bottomY = pipe.top + PIPE_GAP;
-        let bottomHeight = canvas.height - bottomY - GROUND_HEIGHT;
-
-        ctx.fillRect(pipe.x,bottomY,60,bottomHeight);
-        ctx.fillRect(pipe.x-5,bottomY,70,20);
+    hearts.push({
+        x: canvas.width + PIPE_WIDTH/2,
+        y: topHeight + PIPE_GAP/2,
+        collected:false
     });
 }
 
-/* ===== ZEMİN ===== */
+/* ===================== */
+/* ÇİZİMLER */
+/* ===================== */
+
+function drawBackground(delta){
+    cloudX1 -= 0.3 * delta;
+    cloudX2 -= 0.2 * delta;
+
+    if(cloudX1 < -100) cloudX1 = 400;
+    if(cloudX2 < -100) cloudX2 = 400;
+
+    ctx.fillStyle="white";
+    ctx.beginPath();
+    ctx.arc(cloudX1,100,30,0,Math.PI*2);
+    ctx.arc(cloudX1+40,100,30,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cloudX2,200,25,0,Math.PI*2);
+    ctx.arc(cloudX2+35,200,25,0,Math.PI*2);
+    ctx.fill();
+}
+
+function drawBird(){
+    ctx.save();
+    ctx.translate(bird.x,bird.y);
+    ctx.rotate(bird.rotation*Math.PI/180);
+
+    ctx.fillStyle="#ffcc00";
+    ctx.beginPath();
+    ctx.arc(0,0,bird.radius,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="#ffaa00";
+    ctx.beginPath();
+    if(bird.wingUp){
+        ctx.ellipse(-5,5,8,15,0,0,Math.PI*2);
+    }else{
+        ctx.ellipse(-5,15,8,15,0,0,Math.PI*2);
+    }
+    ctx.fill();
+
+    bird.wingUp = !bird.wingUp;
+
+    ctx.restore();
+}
+
+function drawPipes(){
+    pipes.forEach(pipe=>{
+        ctx.fillStyle="#2ecc71";
+        ctx.fillRect(pipe.x,0,PIPE_WIDTH,pipe.top);
+
+        let bottomY = pipe.top + PIPE_GAP;
+        ctx.fillRect(pipe.x,bottomY,PIPE_WIDTH,canvas.height-bottomY-GROUND_HEIGHT);
+    });
+}
+
 function drawGround(){
     ctx.fillStyle="#8b5a2b";
     ctx.fillRect(0,canvas.height-GROUND_HEIGHT,canvas.width,GROUND_HEIGHT);
 }
 
-/* ===== ÇARPIŞMA ===== */
-function checkCollision(pipe){
-    if(
-        bird.x + bird.radius > pipe.x &&
-        bird.x - bird.radius < pipe.x + 60
-    ){
-        if(
-            bird.y - bird.radius < pipe.top ||
-            bird.y + bird.radius > pipe.top + PIPE_GAP
-        ){
-            return true;
+function drawHearts(){
+    hearts.forEach(h=>{
+        if(!h.collected){
+            ctx.fillStyle="red";
+            ctx.beginPath();
+            ctx.arc(h.x-5,h.y,5,0,Math.PI*2);
+            ctx.arc(h.x+5,h.y,5,0,Math.PI*2);
+            ctx.lineTo(h.x,h.y+10);
+            ctx.fill();
         }
-    }
-    return false;
+    });
 }
 
-/* ===== RESET ===== */
-function restart(){
-    bird.y = 350;
-    bird.velocity = 0;
-    pipes = [];
-    score = 0;
-    frame = 0;
-    gameOver = false;
-}
+/* ===================== */
+/* GAME LOOP */
+/* ===================== */
 
-/* ===== GAME LOOP ===== */
-function update(){
+function update(timestamp){
+
+    let delta = (timestamp-lastTime)/16.67;
+    lastTime = timestamp;
+
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    frame++;
 
-    if(frame % PIPE_DISTANCE === 0){
+    drawBackground(delta);
+
+    if(pipes.length===0 || canvas.width - pipes[pipes.length-1].x >= PIPE_DISTANCE_PX){
         createPipe();
     }
 
     if(!gameOver){
-        bird.velocity += GRAVITY;
+        bird.velocity += GRAVITY * delta;
         if(bird.velocity > MAX_FALL) bird.velocity = MAX_FALL;
-        bird.y += bird.velocity;
+        bird.y += bird.velocity * delta;
+
+        if(bird.velocity > 0){
+            bird.rotation += 3 * delta;
+            if(bird.rotation>90) bird.rotation=90;
+        }
     }
 
     pipes.forEach(pipe=>{
-        pipe.x -= PIPE_SPEED;
+        pipe.x -= currentPipeSpeed * delta;
 
-        if(!pipe.passed && pipe.x + 60 < bird.x){
+        if(!pipe.passed && pipe.x + PIPE_WIDTH < bird.x){
             score++;
-            pipe.passed = true;
-        }
-
-        if(checkCollision(pipe)){
-            gameOver = true;
+            pipe.passed=true;
+            currentPipeSpeed += 0.08;
         }
     });
 
-    if(bird.y + bird.radius > canvas.height - GROUND_HEIGHT){
-        gameOver = true;
-    }
+    hearts.forEach(h=>{
+        h.x -= currentPipeSpeed * delta;
+
+        if(!h.collected){
+            let dx = bird.x - h.x;
+            let dy = bird.y - h.y;
+            if(Math.sqrt(dx*dx+dy*dy) < bird.radius+8){
+                h.collected=true;
+                score+=2;
+            }
+        }
+    });
 
     drawPipes();
+    drawHearts();
     drawGround();
     drawBird();
 
-    ctx.fillStyle="#333";
-    ctx.font="28px Arial";
+    ctx.fillStyle="#000";
+    ctx.font="24px Arial";
     ctx.fillText("Skor: "+score,20,40);
-    ctx.fillText("Rekor: "+bestScore,20,80);
-
-    if(gameOver){
-        if(score > bestScore){
-            bestScore = score;
-            localStorage.setItem("bestScore",bestScore);
-        }
-
-        ctx.fillStyle="rgba(0,0,0,0.4)";
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-
-        ctx.fillStyle="white";
-        ctx.font="36px Arial";
-        ctx.fillText("Oyun Bitti 💔",80,300);
-
-        ctx.font="22px Arial";
-        ctx.fillText("Tekrar başlamak için dokun",60,350);
-    }
 
     requestAnimationFrame(update);
 }
 
-update();
-</script>
+function restart(){
+    pipes=[];
+    hearts=[];
+    score=0;
+    currentPipeSpeed=basePipeSpeed;
+    bird.y=350;
+    bird.velocity=0;
+    gameOver=false;
+}
 
+requestAnimationFrame(update);
+
+</script>
 </body>
 </html>
