@@ -69,6 +69,10 @@ function resizeGame(){
 resizeGame();
 window.addEventListener("resize", resizeGame);
 
+/* ===== PARALLAX DEĞERLER ===== */
+let backCloudX = 0;
+let frontCloudX = 0;
+
 /* ===== FİZİK ===== */
 const GRAVITY = 0.3025;
 const JUMP = -6.2;
@@ -79,8 +83,7 @@ let currentPipeSpeed = basePipeSpeed;
 
 const PIPE_GAP = 195;
 const PIPE_WIDTH = 60;
-const PIPE_DISTANCE_PX = 260;   // 🔥 SABİT YATAY MESAFE (piksel)
-
+const PIPE_DISTANCE_PX = 260;
 const GROUND_HEIGHT = 80;
 
 let lastTime = 0;
@@ -124,7 +127,7 @@ document.addEventListener("keydown", e=>{
 });
 canvas.addEventListener("touchstart", jump);
 
-/* ===== BORU OLUŞTURMA (PİKSEL TABANLI) ===== */
+/* ===== BORU OLUŞTURMA ===== */
 function createPipe(){
     let min = 80;
     let max = canvas.height - PIPE_GAP - GROUND_HEIGHT - 80;
@@ -135,6 +138,34 @@ function createPipe(){
         top: topHeight,
         passed:false
     });
+}
+
+/* ===== PARALLAX ÇİZİM ===== */
+function drawParallax(delta){
+
+    backCloudX -= 0.2 * delta;
+    frontCloudX -= 0.5 * delta;
+
+    if(backCloudX < -canvas.width) backCloudX = 0;
+    if(frontCloudX < -canvas.width) frontCloudX = 0;
+
+    // Uzak bulutlar (daha yavaş)
+    ctx.fillStyle="rgba(255,255,255,0.6)";
+    for(let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.arc(backCloudX + i*200 + 50,120,30,0,Math.PI*2);
+        ctx.arc(backCloudX + i*200 + 90,120,30,0,Math.PI*2);
+        ctx.fill();
+    }
+
+    // Ön bulutlar (daha hızlı)
+    ctx.fillStyle="rgba(255,255,255,0.9)";
+    for(let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.arc(frontCloudX + i*220 + 80,200,25,0,Math.PI*2);
+        ctx.arc(frontCloudX + i*220 + 110,200,25,0,Math.PI*2);
+        ctx.fill();
+    }
 }
 
 /* ===== KUŞ ===== */
@@ -226,7 +257,8 @@ function update(timestamp){
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    /* === SABİT MESAFE MANTIĞI === */
+    drawParallax(deltaTime);
+
     if(pipes.length === 0){
         createPipe();
     } else {
@@ -237,7 +269,6 @@ function update(timestamp){
     }
 
     if(!gameOver){
-
         bird.velocity += GRAVITY * deltaTime;
         if(bird.velocity > MAX_FALL) bird.velocity = MAX_FALL;
         bird.y += bird.velocity * deltaTime;
@@ -254,8 +285,7 @@ function update(timestamp){
         if(!pipe.passed && pipe.x + PIPE_WIDTH < bird.x){
             score++;
             pipe.passed = true;
-
-            currentPipeSpeed += 0.08; // hız artsın ama mesafe sabit kalsın
+            currentPipeSpeed += 0.08;
         }
 
         if(checkCollision(pipe)){
