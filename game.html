@@ -8,7 +8,7 @@
 <style>
 body{
     margin:0;
-    background:#f8e6f0;
+    background:#000;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -22,7 +22,6 @@ body{
 }
 
 canvas{
-    background:linear-gradient(to top,#f9d6e5,#fff0f6);
     display:block;
     border-radius:12px;
 }
@@ -69,10 +68,6 @@ function resizeGame(){
 resizeGame();
 window.addEventListener("resize", resizeGame);
 
-/* ===== PARALLAX DEĞERLER ===== */
-let backCloudX = 0;
-let frontCloudX = 0;
-
 /* ===== FİZİK ===== */
 const GRAVITY = 0.3025;
 const JUMP = -6.2;
@@ -84,9 +79,18 @@ let currentPipeSpeed = basePipeSpeed;
 const PIPE_GAP = 195;
 const PIPE_WIDTH = 60;
 const PIPE_DISTANCE_PX = 260;
+
 const GROUND_HEIGHT = 80;
 
 let lastTime = 0;
+
+/* ===== ARKA PLAN ===== */
+let skyOffset = 0;
+let dayProgress = 0; // 0 - 1 arası gün batımı geçişi
+
+/* ===== SHAKE ===== */
+let shakeTime = 0;
+let shakePower = 0;
 
 /* ===== KUŞ ===== */
 let bird = {
@@ -127,7 +131,7 @@ document.addEventListener("keydown", e=>{
 });
 canvas.addEventListener("touchstart", jump);
 
-/* ===== BORU OLUŞTURMA ===== */
+/* ===== BORU ===== */
 function createPipe(){
     let min = 80;
     let max = canvas.height - PIPE_GAP - GROUND_HEIGHT - 80;
@@ -140,32 +144,33 @@ function createPipe(){
     });
 }
 
-/* ===== PARALLAX ÇİZİM ===== */
-function drawParallax(delta){
+/* ===== ANİMASYONLU SKY ===== */
+function drawSky(deltaTime){
 
-    backCloudX -= 0.2 * delta;
-    frontCloudX -= 0.5 * delta;
+    skyOffset += 0.2 * deltaTime;
+    dayProgress += 0.0005 * deltaTime;
+    if(dayProgress > 1) dayProgress = 0;
 
-    if(backCloudX < -canvas.width) backCloudX = 0;
-    if(frontCloudX < -canvas.width) frontCloudX = 0;
+    let r1 = Math.floor(255 - 120 * dayProgress);
+    let g1 = Math.floor(200 - 100 * dayProgress);
+    let b1 = Math.floor(255 - 200 * dayProgress);
 
-    // Uzak bulutlar (daha yavaş)
-    ctx.fillStyle="rgba(255,255,255,0.6)";
-    for(let i=0;i<3;i++){
-        ctx.beginPath();
-        ctx.arc(backCloudX + i*200 + 50,120,30,0,Math.PI*2);
-        ctx.arc(backCloudX + i*200 + 90,120,30,0,Math.PI*2);
-        ctx.fill();
-    }
+    let r2 = Math.floor(255 - 50 * dayProgress);
+    let g2 = Math.floor(150 - 100 * dayProgress);
+    let b2 = Math.floor(200 - 150 * dayProgress);
 
-    // Ön bulutlar (daha hızlı)
-    ctx.fillStyle="rgba(255,255,255,0.9)";
-    for(let i=0;i<3;i++){
-        ctx.beginPath();
-        ctx.arc(frontCloudX + i*220 + 80,200,25,0,Math.PI*2);
-        ctx.arc(frontCloudX + i*220 + 110,200,25,0,Math.PI*2);
-        ctx.fill();
-    }
+    let gradient = ctx.createLinearGradient(
+        0,
+        -skyOffset % canvas.height,
+        0,
+        canvas.height
+    );
+
+    gradient.addColorStop(0, `rgb(${r1},${g1},${b1})`);
+    gradient.addColorStop(1, `rgb(${r2},${g2},${b2})`);
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 }
 
 /* ===== KUŞ ===== */
@@ -222,6 +227,16 @@ function drawGround(){
     ctx.fillRect(0,canvas.height-GROUND_HEIGHT,canvas.width,GROUND_HEIGHT);
 }
 
+/* ===== SHAKE UYGULA ===== */
+function applyShake(){
+    if(shakeTime > 0){
+        let dx = (Math.random()-0.5)*shakePower;
+        let dy = (Math.random()-0.5)*shakePower;
+        ctx.translate(dx,dy);
+        shakeTime--;
+    }
+}
+
 /* ===== ÇARPIŞMA ===== */
 function checkCollision(pipe){
     if(
@@ -232,6 +247,8 @@ function checkCollision(pipe){
             bird.y - bird.radius < pipe.top ||
             bird.y + bird.radius > pipe.top + PIPE_GAP
         ){
+            shakeTime = 15;
+            shakePower = 6;
             return true;
         }
     }
@@ -255,9 +272,12 @@ function update(timestamp){
     let deltaTime = (timestamp - lastTime) / 16.67;
     lastTime = timestamp;
 
+    ctx.save();
+
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    drawParallax(deltaTime);
+    drawSky(deltaTime);
+    applyShake();
 
     if(pipes.length === 0){
         createPipe();
@@ -269,6 +289,7 @@ function update(timestamp){
     }
 
     if(!gameOver){
+
         bird.velocity += GRAVITY * deltaTime;
         if(bird.velocity > MAX_FALL) bird.velocity = MAX_FALL;
         bird.y += bird.velocity * deltaTime;
@@ -294,6 +315,8 @@ function update(timestamp){
     });
 
     if(bird.y + bird.radius > canvas.height - GROUND_HEIGHT){
+        shakeTime = 15;
+        shakePower = 6;
         gameOver = true;
     }
 
@@ -322,6 +345,8 @@ function update(timestamp){
         ctx.font="22px Arial";
         ctx.fillText("Tekrar başlamak için dokun",60,350);
     }
+
+    ctx.restore();
 
     requestAnimationFrame(update);
 }
